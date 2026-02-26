@@ -93,7 +93,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 flex">
       <Sidebar />
 
-      <div className="flex-1">
+      <div className="flex-1 md:ml-64">
         <Navbar user={user} onLogout={handleLogout} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
