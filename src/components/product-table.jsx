@@ -1,255 +1,663 @@
-import { useState } from "react";
-import DashboardCards from "./DashboardCards";
+import { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-function ProductTable({ products, onDelete, onEdit, filterCategory, setFilterCategory, allProducts }) {
-  const [sortBy, setSortBy] = useState("name");
+function ProductTable({ onDelete, onEdit, onQuickSave, filterCategory, setFilterCategory, allProducts }) {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [expiryFilter, setExpiryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [detailsProduct, setDetailsProduct] = useState(null);
+  const [stockModalProduct, setStockModalProduct] = useState(null);
+  const [bulkStockQty, setBulkStockQty] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [scanValue, setScanValue] = useState("");
+
+  const itemsPerPage = 10;
+  const today = new Date();
+
+  const getDaysUntilExpiry = (expiryDate) => {
+    if (!expiryDate) return null;
+    const diff = new Date(expiryDate) - today;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const getStatusMeta = (product) => {
+    const qty = Number(product.quantity || 0);
+    const days = getDaysUntilExpiry(product.expiry);
+
+    if (days !== null && days < 0) {
+      return {
+        label: "Expired",
+        badge: "bg-red-100 text-red-700",
+        row: "bg-red-50/60",
+      };
+    }
+    if (days !== null && days <= 3) {
+      return {
+        label: "Expiring Soon",
+        badge: "bg-orange-100 text-orange-700",
+        row: "bg-orange-50/50",
+      };
+    }
+    if (qty === 0) {
+      return {
+        label: "Out of Stock",
+        badge: "bg-red-100 text-red-700",
+        row: "bg-red-50/40",
+      };
+    }
+    if (qty <= 5) {
+      return {
+        label: "Low Stock",
+        badge: "bg-yellow-100 text-yellow-700",
+        row: "bg-yellow-50/50",
+      };
+    }
+
+    return {
+      label: "Healthy",
+      badge: "bg-green-100 text-green-700",
+      row: "",
+    };
+  };
 
   const categories = [...new Set(allProducts.map((p) => p.category).filter(Boolean))];
+  const suppliers = [...new Set(allProducts.map((p) => p.supplier).filter(Boolean))];
 
-  const getStatusBadge = (product) => {
-    const today = new Date();
-    const expiry = product.expiry ? new Date(product.expiry) : null;
-    const daysUntilExpiry = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
+  const filteredProducts = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
 
-    if (expiry && daysUntilExpiry < 0) {
-      return <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md">Expired</span>;
-    }
+    let result = allProducts.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const category = (p.category || "").toLowerCase();
+      const barcode = String(p.barcode || p.sku || "").toLowerCase();
+      const supplier = (p.supplier || "").toLowerCase();
+      const price = Number(p.price || 0);
+      const qty = Number(p.quantity || 0);
+      const days = getDaysUntilExpiry(p.expiry);
 
-    if (expiry && daysUntilExpiry !== null && daysUntilExpiry <= 7) {
-      return <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md">Expiring Soon</span>;
-    }
+      const matchesSearch =
+        q === "" ||
+        name.includes(q) ||
+        category.includes(q) ||
+        barcode.includes(q);
 
-    if (product.quantity === 0) {
-      return <span className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md">Out of Stock</span>;
-    }
+      const matchesCategory = filterCategory === "" || p.category === filterCategory;
+      const matchesSupplier = supplierFilter === "" || p.supplier === supplierFilter;
 
-    if (product.quantity < 5) {
-      return <span className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md">Low Stock</span>;
-    }
+      const matchesStock =
+        stockFilter === "all" ||
+        (stockFilter === "low" && qty > 0 && qty <= 5) ||
+        (stockFilter === "out" && qty === 0) ||
+        (stockFilter === "healthy" && qty > 5);
 
-    return <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-md">In Stock</span>;
-  };
+      const matchesExpiry =
+        expiryFilter === "all" ||
+        (expiryFilter === "today" && days === 0) ||
+        (expiryFilter === "3days" && days !== null && days >= 0 && days <= 3) ||
+        (expiryFilter === "7days" && days !== null && days >= 0 && days <= 7) ||
+        (expiryFilter === "expired" && days !== null && days < 0);
 
-  const getStockStatus = (quantity) => {
-    if (quantity === 0) return <span className="text-red-600 font-bold text-sm">📉 Out of Stock</span>;
-    if (quantity < 5) return <span className="text-orange-600 font-bold text-sm">⚠️ Low Stock</span>;
-    return <span className="text-green-600 font-bold text-sm">✓ In Stock</span>;
-  };
+      const matchesMinPrice = minPrice === "" || price >= Number(minPrice);
+      const matchesMaxPrice = maxPrice === "" || price <= Number(maxPrice);
 
-  const formatCurrency = (val) => {
-    const n = parseFloat(val) || 0;
-    if (Number.isInteger(n)) return `₹${n}`;
-    return `₹${n.toFixed(2)}`;
-  };
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesSupplier &&
+        matchesStock &&
+        matchesExpiry &&
+        matchesMinPrice &&
+        matchesMaxPrice
+      );
+    });
 
-  const sortedProducts = [...products].sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "expiry":
+    result.sort((a, b) => {
+      if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
+      if (sortBy === "price") return Number(a.price || 0) - Number(b.price || 0);
+      if (sortBy === "quantity") return Number(a.quantity || 0) - Number(b.quantity || 0);
+      if (sortBy === "expiry") {
         return new Date(a.expiry || "9999-12-31") - new Date(b.expiry || "9999-12-31");
-      case "quantity":
-        return a.quantity - b.quantity;
-      case "price":
-        return a.price - b.price;
-      default:
-        return 0;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [
+    allProducts,
+    searchTerm,
+    filterCategory,
+    supplierFilter,
+    stockFilter,
+    expiryFilter,
+    minPrice,
+    maxPrice,
+    sortBy,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProducts = filteredProducts.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
+
+  const analytics = {
+    total: allProducts.length,
+    lowStock: allProducts.filter((p) => Number(p.quantity || 0) > 0 && Number(p.quantity || 0) <= 5).length,
+    expiringSoon: allProducts.filter((p) => {
+      const days = getDaysUntilExpiry(p.expiry);
+      return days !== null && days >= 0 && days <= 3;
+    }).length,
+    expired: allProducts.filter((p) => {
+      const days = getDaysUntilExpiry(p.expiry);
+      return days !== null && days < 0;
+    }).length,
+    value: allProducts.reduce((sum, p) => sum + Number(p.price || 0) * Number(p.quantity || 0), 0),
+  };
+
+  const toggleSelectAllPage = (checked) => {
+    if (!checked) {
+      setSelectedIds((prev) => prev.filter((id) => !paginatedProducts.some((p) => p.id === id)));
+      return;
     }
-  });
+    setSelectedIds((prev) => {
+      const set = new Set(prev);
+      paginatedProducts.forEach((p) => set.add(p.id));
+      return [...set];
+    });
+  };
+
+  const toggleSelectOne = (id, checked) => {
+    setSelectedIds((prev) => (checked ? [...new Set([...prev, id])] : prev.filter((v) => v !== id)));
+  };
+
+  const bulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    selectedIds.forEach((id) => onDelete(id));
+    setSelectedIds([]);
+  };
+
+  const applyBulkStock = () => {
+    const addQty = Number(bulkStockQty);
+    if (!addQty || addQty <= 0 || selectedIds.length === 0) return;
+    allProducts.forEach((p) => {
+      if (selectedIds.includes(p.id)) {
+        onQuickSave({ ...p, quantity: Number(p.quantity || 0) + addQty });
+      }
+    });
+    setBulkStockQty("");
+  };
+
+  const applyDiscount = () => {
+    const pct = Number(discountPercent);
+    if (!pct || pct <= 0 || pct >= 100 || selectedIds.length === 0) return;
+
+    allProducts.forEach((p) => {
+      if (selectedIds.includes(p.id)) {
+        const updatedPrice = Number(p.price || 0) * (1 - pct / 100);
+        onQuickSave({ ...p, price: Number(updatedPrice.toFixed(2)) });
+      }
+    });
+    setDiscountPercent("");
+  };
+
+  const exportProducts = (productsToExport) => {
+    const headers = [
+      "Product",
+      "Category",
+      "Supplier",
+      "Barcode",
+      "Stock",
+      "Price",
+      "Expiry",
+    ];
+    const rows = productsToExport.map((p) => [
+      p.name || "",
+      p.category || "",
+      p.supplier || "",
+      p.barcode || p.sku || "",
+      p.quantity || 0,
+      p.price || 0,
+      p.expiry || "",
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "marketmind-inventory.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const importCsv = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (lines.length <= 1) return;
+
+    const header = lines[0].split(",").map((h) => h.trim().replace(/"/g, "").toLowerCase());
+    const idx = (key) => header.indexOf(key);
+
+    const imports = lines.slice(1).map((line) => {
+      const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+      return {
+        id: Date.now() + Math.random(),
+        name: cols[idx("product")] || cols[idx("name")] || "New Product",
+        category: cols[idx("category")] || "General",
+        supplier: cols[idx("supplier")] || "",
+        barcode: cols[idx("barcode")] || "",
+        quantity: Number(cols[idx("stock")] || cols[idx("quantity")] || 0),
+        price: Number(cols[idx("price")] || 0),
+        expiry: cols[idx("expiry")] || "",
+      };
+    });
+
+    imports.forEach((p) => onQuickSave(p));
+    event.target.value = "";
+  };
+
+  const openRestockModal = (product) => {
+    setStockModalProduct(product);
+    setBulkStockQty("");
+  };
+
+  const updateSingleStock = () => {
+    const addQty = Number(bulkStockQty);
+    if (!stockModalProduct || !addQty || addQty <= 0) return;
+    onQuickSave({
+      ...stockModalProduct,
+      quantity: Number(stockModalProduct.quantity || 0) + addQty,
+    });
+    setStockModalProduct(null);
+    setBulkStockQty("");
+  };
+
+  const openBarcodeSearch = () => {
+    const code = window.prompt("Scan or enter barcode");
+    if (!code) return;
+    setScanValue(code);
+    setSearchTerm(code);
+  };
+
+  const allSelectedOnPage =
+    paginatedProducts.length > 0 && paginatedProducts.every((p) => selectedIds.includes(p.id));
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 via-gray-100 to-blue-50 rounded-3xl p-8 min-h-screen">
-      {/* Dashboard Cards */}
-      <div className="mb-10">
-        <DashboardCards products={allProducts} />
-      </div>
-      
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-10 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-blue-50 rounded-3xl p-6 min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            📊 Inventory
-          </h2>
-          <p className="text-gray-600 text-sm mt-2 font-semibold">
-            Showing <span className="text-blue-600 font-bold">{products.length}</span> of <span className="text-blue-600 font-bold">{allProducts.length}</span> products
-          </p>
+          <h1 className="text-3xl font-black text-gray-900">Inventory Control Center</h1>
+          <p className="text-gray-600 mt-1">Manage stock, expiry, and bulk operations in one place.</p>
         </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg hover:shadow-xl transform hover:scale-105 duration-300"
-        >
-          {showFilters ? "✕ Hide Filters" : "⚙️ Filters"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate("/product-form")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
+          >
+            ➕ Add Product
+          </button>
+          <button
+            onClick={openBarcodeSearch}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold"
+          >
+            📷 Scan Barcode
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
+      <div className="bg-white rounded-xl p-4 shadow border border-gray-100 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="md:col-span-8">
+            <label className="text-sm text-gray-600">🔍 Search product by name / barcode / category</label>
+            <input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search products..."
+              className="mt-1 w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {scanValue && <p className="text-xs text-gray-500 mt-1">Scanned: {scanValue}</p>}
+          </div>
+          <div className="md:col-span-4 flex items-end gap-2">
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className="flex-1 bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg font-semibold"
+            >
+              {showFilters ? "Hide Filters" : "Advanced Filters"}
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold"
+            >
+              Import CSV
+            </button>
+            <button
+              onClick={() => exportProducts(filteredProducts)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
+            >
+              Export CSV
+            </button>
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={importCsv} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-5">
+        <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Total Products</p>
+          <p className="text-2xl font-bold">{analytics.total}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Low Stock</p>
+          <p className="text-2xl font-bold text-yellow-700">{analytics.lowStock}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Expiring Soon</p>
+          <p className="text-2xl font-bold text-orange-700">{analytics.expiringSoon}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Expired</p>
+          <p className="text-2xl font-bold text-red-700">{analytics.expired}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+          <p className="text-xs text-gray-500">Inventory Value</p>
+          <p className="text-2xl font-bold text-green-700">₹{analytics.value.toLocaleString("en-IN")}</p>
+        </div>
+      </div>
+
       {showFilters && (
-        <div className="bg-white p-7 rounded-2xl mb-8 border border-gray-200 shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide opacity-75">
-                🏷️ Category
-              </label>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-semibold text-gray-700 hover:border-blue-400"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+        <div className="bg-white p-5 rounded-xl mb-5 border border-gray-200 shadow">
+          <h3 className="font-semibold text-gray-900 mb-3">Filter By</h3>
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">Category</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={supplierFilter}
+              onChange={(e) => setSupplierFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">Supplier</option>
+              {suppliers.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="all">Stock Level</option>
+              <option value="low">Low Stock</option>
+              <option value="out">Out of Stock</option>
+              <option value="healthy">Healthy Stock</option>
+            </select>
+
+            <select
+              value={expiryFilter}
+              onChange={(e) => setExpiryFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="all">Expiry Date</option>
+              <option value="today">Expiring Today</option>
+              <option value="3days">Expiring in 3 days</option>
+              <option value="7days">Expiring in 7 days</option>
+              <option value="expired">Expired</option>
+            </select>
+
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min ₹"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+              <input
+                type="number"
+                placeholder="Max ₹"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide opacity-75">
-                📈 Sort By
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-semibold text-gray-700 hover:border-blue-400"
-              >
-                <option value="name">Product Name</option>
-                <option value="expiry">Expiry Date</option>
-                <option value="quantity">Stock Quantity</option>
-                <option value="price">Price</option>
-              </select>
-            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="name">Sort: Name</option>
+              <option value="price">Sort: Price</option>
+              <option value="quantity">Sort: Stock</option>
+              <option value="expiry">Sort: Expiry</option>
+            </select>
+          </div>
+        </div>
+      )}
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide opacity-75">
-                🔄 Actions
-              </label>
+      <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b bg-gray-50 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-gray-700">Bulk Actions:</span>
+          <button onClick={bulkDelete} className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg">Delete</button>
+          <button onClick={applyBulkStock} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg">Update Stock</button>
+          <button onClick={applyDiscount} className="px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg">Apply Discount</button>
+          <button
+            onClick={() => exportProducts(allProducts.filter((p) => selectedIds.includes(p.id)))}
+            className="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg"
+          >
+            Export
+          </button>
+
+          <input
+            value={bulkStockQty}
+            onChange={(e) => setBulkStockQty(e.target.value)}
+            type="number"
+            placeholder="+Stock"
+            className="ml-auto border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-24"
+          />
+          <input
+            value={discountPercent}
+            onChange={(e) => setDiscountPercent(e.target.value)}
+            type="number"
+            placeholder="Discount %"
+            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm w-28"
+          />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[980px]">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelectedOnPage}
+                    onChange={(e) => toggleSelectAllPage(e.target.checked)}
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Product</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Category</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Supplier</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Stock</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Price</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Expiry</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-800">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="px-4 py-10 text-center text-gray-500">
+                    No products found for current filters.
+                  </td>
+                </tr>
+              ) : (
+                paginatedProducts.map((p) => {
+                  const status = getStatusMeta(p);
+                  const days = getDaysUntilExpiry(p.expiry);
+                  return (
+                    <tr key={p.id} className={`border-t hover:bg-blue-50/40 ${status.row}`}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(p.id)}
+                          onChange={(e) => toggleSelectOne(p.id, e.target.checked)}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setDetailsProduct(p)}
+                          className="text-left font-semibold text-blue-700 hover:underline"
+                        >
+                          {p.name}
+                        </button>
+                        <p className="text-xs text-gray-500">Barcode: {p.barcode || p.sku || "-"}</p>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{p.category || "-"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{p.supplier || "-"}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-800">{p.quantity || 0}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">₹{Number(p.price || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {p.expiry ? new Date(p.expiry).toLocaleDateString("en-IN") : "-"}
+                        {days !== null && days <= 1 && days >= 0 && (
+                          <p className="text-xs text-orange-700">⚠ expiring in {days} day</p>
+                        )}
+                        {days !== null && days < 0 && <p className="text-xs text-red-700">⚠ already expired</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${status.badge}`}>
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={() => onEdit(p)} className="px-2 py-1 bg-blue-600 text-white rounded">Edit</button>
+                          {(Number(p.quantity || 0) <= 5 || status.label === "Low Stock") && (
+                            <button
+                              onClick={() => openRestockModal(p)}
+                              className="px-2 py-1 bg-amber-500 text-white rounded"
+                            >
+                              Restock
+                            </button>
+                          )}
+                          <button onClick={() => onDelete(p.id)} className="px-2 py-1 bg-red-600 text-white rounded">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-4 border-t flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            Showing {(safePage - 1) * itemsPerPage + (paginatedProducts.length ? 1 : 0)}-
+            {(safePage - 1) * itemsPerPage + paginatedProducts.length} of {filteredProducts.length}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={safePage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded border border-gray-300 disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              disabled={safePage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded border border-gray-300 disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {detailsProduct && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Product Details</h3>
+              <button onClick={() => setDetailsProduct(null)} className="text-gray-500 text-xl">✕</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <p><span className="text-gray-500">Name:</span> {detailsProduct.name}</p>
+              <p><span className="text-gray-500">Category:</span> {detailsProduct.category || "-"}</p>
+              <p><span className="text-gray-500">Supplier:</span> {detailsProduct.supplier || "-"}</p>
+              <p><span className="text-gray-500">Price:</span> ₹{Number(detailsProduct.price || 0).toFixed(2)}</p>
+              <p><span className="text-gray-500">Stock:</span> {detailsProduct.quantity || 0}</p>
+              <p><span className="text-gray-500">Expiry:</span> {detailsProduct.expiry || "-"}</p>
+              <p><span className="text-gray-500">Barcode:</span> {detailsProduct.barcode || detailsProduct.sku || "-"}</p>
+              <p><span className="text-gray-500">Added:</span> {new Date(detailsProduct.id).toLocaleDateString("en-IN")}</p>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button onClick={() => onEdit(detailsProduct)} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Edit</button>
+              <button onClick={() => openRestockModal(detailsProduct)} className="px-4 py-2 bg-amber-500 text-white rounded-lg">Update Stock</button>
               <button
-                onClick={() => setFilterCategory("")}
-                className="w-full bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-4 py-3 rounded-lg font-bold transition shadow-md hover:shadow-lg transform hover:scale-105 duration-300"
+                onClick={() => {
+                  onDelete(detailsProduct.id);
+                  setDetailsProduct(null);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg"
               >
-                Clear All Filters
+                Delete
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* No Products */}
-      {products.length === 0 ? (
-        <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl p-16 text-center shadow-lg border border-gray-200">
-          <p className="text-5xl mb-4">📭</p>
-          <p className="text-gray-600 text-2xl font-bold">No products found</p>
-          <p className="text-gray-500 text-base mt-3 font-semibold">
-            {filterCategory || (allProducts.length === 0)
-              ? "Try adjusting your filters or search criteria"
-              : "Add your first product to get started"}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sortedProducts.map((p) => {
-            const today = new Date();
-            const expiry = p.expiry ? new Date(p.expiry) : null;
-            const daysUntilExpiry = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null;
-            
-            let badgeColor = "bg-green-500";
-            let badgeText = "In Stock";
-            
-            if (expiry && daysUntilExpiry < 0) {
-              badgeColor = "bg-red-500";
-              badgeText = "Expired";
-            } else if (expiry && daysUntilExpiry <= 7) {
-              badgeColor = "bg-orange-500";
-              badgeText = "Expiring";
-            } else if (p.quantity === 0) {
-              badgeColor = "bg-red-500";
-              badgeText = "Out";
-            } else if (p.quantity < 5) {
-              badgeColor = "bg-yellow-500";
-              badgeText = "Low";
-            }
-
-            return (
-              <div
-                key={p.id}
-                className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 flex flex-col h-full group hover:border-blue-300"
-              >
-                {/* Product Image Area */}
-                <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 h-32 flex items-center justify-center overflow-hidden border-b border-gray-100">
-                  <div className="text-6xl group-hover:scale-125 transition-transform duration-300 drop-shadow-md">
-                    {p.icon || '🥛'}
-                  </div>
-                  
-                  {/* Badge */}
-                  <div className={`absolute top-2 left-2 ${badgeColor} text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md`}>
-                    {badgeText}
-                  </div>
-
-                  {/* Wishlist Heart */}
-                  <button className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-md hover:bg-white hover:scale-110 transition-all text-base">
-                    🤍
-                  </button>
-                </div>
-
-                {/* Product Info */}
-                <div className="p-3 flex flex-col flex-1 bg-gradient-to-b from-white to-gray-50">
-                  {/* Category */}
-                  <p className="text-xs text-blue-600 font-bold tracking-wider mb-1 uppercase line-clamp-1">
-                    {p.category || "Product"}
-                  </p>
-
-                  {/* Product Name */}
-                  <h3 className="font-bold text-gray-900 text-sm leading-snug mb-2 line-clamp-2 h-9">
-                    {p.name}
-                  </h3>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <p className="text-lg font-black text-blue-600">
-                      {formatCurrency(p.price)}
-                    </p>
-                  </div>
-
-                  {/* Rating and Stock Info */}
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <div className="flex items-center gap-1">
-                      <span>⭐</span>
-                      <span className="text-gray-700 font-semibold text-xs">4.5</span>
-                    </div>
-                    <span className="text-gray-600 font-semibold text-xs">Qty: {p.quantity}</span>
-                  </div>
-
-                  {/* Expiry info if available */}
-                  {p.expiry && (
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-1 font-medium">
-                      📅 {new Date(p.expiry).toLocaleDateString()}
-                    </p>
-                  )}
-
-                  {/* Spacer */}
-                  <div className="flex-1"></div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-1.5 pt-2">
-                    <button
-                      onClick={() => onEdit(p)}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-1.5 px-2 rounded-lg font-bold text-xs transition duration-200 shadow-sm"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(p.id)}
-                      className="flex-1 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 text-red-600 hover:text-red-700 py-1.5 px-2 rounded-lg font-bold text-xs transition duration-200"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      {stockModalProduct && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6">
+            <h3 className="text-xl font-bold mb-3">Add Stock</h3>
+            <p className="text-sm text-gray-600">Current Stock: {stockModalProduct.quantity || 0}</p>
+            <input
+              value={bulkStockQty}
+              onChange={(e) => setBulkStockQty(e.target.value)}
+              type="number"
+              placeholder="Add Quantity"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-3"
+            />
+            <div className="mt-4 flex gap-2">
+              <button onClick={updateSingleStock} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Update</button>
+              <button onClick={() => setStockModalProduct(null)} className="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
