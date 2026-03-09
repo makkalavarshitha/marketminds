@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Sidebar() {
 
   return (
-    <aside className="fixed w-64 bg-gradient-to-b from-blue-800 to-indigo-900 min-h-screen text-white hidden md:flex flex-col p-6 left-0 top-0 overflow-y-auto">
+    <aside className="fixed w-64 bg-gradient-to-b from-blue-800 to-indigo-900 min-h-screen text-white hidden md:flex flex-col p-6 left-0 top-0 overflow-y-auto z-50">
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 bg-white/10 rounded-md flex items-center justify-center text-lg font-bold">M</div>
         <div>
@@ -44,26 +44,22 @@ export default function Sidebar() {
             </Link>
           </li>
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
-            <a href="#" className="flex items-center gap-3 text-sm font-semibold">
+            <Link to="/help" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">❓</span> Help
-            </a>
+            </Link>
           </li>
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
-            <a href="#" className="flex items-center gap-3 text-sm font-semibold">
+            <Link to="/about" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">ℹ️</span> About Us
-            </a>
+            </Link>
           </li>
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
-            <a href="#" className="flex items-center gap-3 text-sm font-semibold">
+            <Link to="/contact" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">📧</span> Contact
-            </a>
+            </Link>
           </li>
         </ul>
       </nav>
-
-      <div className="mt-6 text-sm text-white/80 pt-4 border-t border-white/10">
-        <button className="w-full bg-white/10 hover:bg-white/12 px-3 py-2 rounded-md text-left">Contact Support</button>
-      </div>
     </aside>
   );
 }

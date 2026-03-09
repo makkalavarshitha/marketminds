@@ -9,6 +9,10 @@ import Sidebar from "./components/Sidebar";
 import Login from "./components/Login";
 import "./App.css";
 import Dashboard from "./components/dashboard";
+import Help from "./components/Help";
+import AboutUs from "./components/AboutUs";
+import Contact from "./components/Contact";
+import { ensureDemoDataSeeded } from "./utils/seedDemoData";
 
 function App() {
   const navigate = useNavigate();
@@ -17,6 +21,7 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [filterCategory, setFilterCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingData, setLoadingData] = useState(true);
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("marketmind-user");
@@ -26,16 +31,29 @@ function App() {
     }
   });
 
-  // Load products
+  // Seed demo data and load products (simulated API-like startup)
   useEffect(() => {
-    const saved = localStorage.getItem("marketmind-products");
-    if (saved) {
+    let mounted = true;
+
+    const bootstrapData = async () => {
       try {
-        setProducts(JSON.parse(saved));
+        await ensureDemoDataSeeded();
+        const saved = localStorage.getItem("marketmind-products");
+        if (saved && mounted) {
+          setProducts(JSON.parse(saved));
+        }
       } catch (error) {
         console.error("Error loading products:", error);
+      } finally {
+        if (mounted) setLoadingData(false);
       }
-    }
+    };
+
+    bootstrapData();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Save products
@@ -72,6 +90,16 @@ function App() {
     navigate("/");
   };
 
+  const handleQuickSaveProduct = (product) => {
+    setProducts((prev) => {
+      const exists = prev.some((p) => p.id === product.id);
+      if (exists) {
+        return prev.map((p) => (p.id === product.id ? product : p));
+      }
+      return [...prev, product];
+    });
+  };
+
   const handleLogin = (u) => setUser(u);
 
   const handleLogout = () => {
@@ -96,18 +124,29 @@ function App() {
     return <Login onLogin={handleLogin} />;
   }
 
+  if (loadingData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50">
+        <div className="bg-white px-6 py-5 rounded-xl shadow border border-gray-100 text-center">
+          <p className="text-lg font-semibold text-gray-800">Loading demo data...</p>
+          <p className="text-sm text-gray-500 mt-1">Preparing inventory, billing and analytics</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 overflow-x-hidden">
       <Sidebar />
 
-      <div className="flex-1 md:ml-64">
+      <div className="min-h-screen md:pl-64 min-w-0">
         <Navbar user={user} onLogout={handleLogout} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-w-0">
 
           <Routes>
-            {/* redirect root to inventory page */}
-            <Route path="/" element={<Navigate to="/product-table" replace />} />
+            {/* redirect root to dashboard page */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
             <Route
               path="/product-table"
@@ -116,6 +155,7 @@ function App() {
                   products={filteredProducts}
                   onDelete={handleDeleteProduct}
                   onEdit={handleEditProduct}
+                  onQuickSave={handleQuickSaveProduct}
                   filterCategory={filterCategory}
                   setFilterCategory={setFilterCategory}
                   allProducts={products}
@@ -151,6 +191,10 @@ function App() {
               path="/billing"
               element={<Billing />}
             />
+
+            <Route path="/help" element={<Help />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<Contact />} />
 
           </Routes>
         </div>
