@@ -96,7 +96,7 @@ Professional issue-report management system:
 - **Main Table Columns**: Report ID, Store Name, Issue Type, Description, Date, Priority, Status, Actions
 - **Status Types**: Open 🔴, In Progress 🟡, Resolved 🟢
 - **Priority Badges**: High 🔴, Medium 🟡, Low 🟢
-- **Admin Actions**: View Details, Mark as Resolved, Change Status, Assign Priority
+- **Admin Actions**: Mark as Resolved
 - **Admin Reply System**: View details modal with response textarea and Send Response button
 - **Owner Report Source**: Owner portal includes small **Report Issue** button + form
 - **Issue Type Dropdown**: Inventory Issue, Billing Issue, Login Problem, Technical Bug, Other

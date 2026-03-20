@@ -2,9 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 
 const ISSUE_REPORTS_KEY = "marketmind-issue-reports";
 
-const STATUS_OPTIONS = ["Open", "In Progress", "Resolved"];
-const PRIORITY_OPTIONS = ["High", "Medium", "Low"];
-
 const defaultReports = [
   {
     id: 1023,
@@ -48,8 +45,6 @@ export default function AdminReports() {
     }
   });
 
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [responseText, setResponseText] = useState("");
 
   useEffect(() => {
     localStorage.setItem(ISSUE_REPORTS_KEY, JSON.stringify(reports));
@@ -72,35 +67,8 @@ export default function AdminReports() {
     setReports((prev) => prev.map((report) => (report.id === id ? { ...report, status } : report)));
   };
 
-  const handlePriorityChange = (id, priority) => {
-    setReports((prev) => prev.map((report) => (report.id === id ? { ...report, priority } : report)));
-  };
-
   const handleMarkResolved = (id) => {
     handleStatusChange(id, "Resolved");
-  };
-
-  const openDetails = (report) => {
-    setSelectedReport(report);
-    setResponseText(report.adminResponse || "");
-  };
-
-  const sendResponse = () => {
-    if (!selectedReport) return;
-
-    setReports((prev) =>
-      prev.map((report) =>
-        report.id === selectedReport.id
-          ? {
-              ...report,
-              adminResponse: responseText,
-              status: report.status === "Open" ? "In Progress" : report.status,
-            }
-          : report
-      )
-    );
-
-    setSelectedReport((prev) => (prev ? { ...prev, adminResponse: responseText } : prev));
   };
 
   return (
@@ -148,35 +116,11 @@ export default function AdminReports() {
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2 min-w-[170px]">
                       <button
-                        onClick={() => openDetails(report)}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold hover:bg-blue-200 transition"
-                      >
-                        View Details
-                      </button>
-                      <button
                         onClick={() => handleMarkResolved(report.id)}
                         className="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold hover:bg-green-200 transition"
                       >
                         Mark as Resolved
                       </button>
-                      <select
-                        value={report.status}
-                        onChange={(e) => handleStatusChange(report.id, e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-xs"
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={report.priority}
-                        onChange={(e) => handlePriorityChange(report.id, e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-xs"
-                      >
-                        {PRIORITY_OPTIONS.map((priority) => (
-                          <option key={priority} value={priority}>{priority}</option>
-                        ))}
-                      </select>
                     </div>
                   </td>
                 </tr>
@@ -185,56 +129,6 @@ export default function AdminReports() {
           </table>
         </div>
       </div>
-
-      {selectedReport && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 flex justify-between items-center">
-              <h3 className="text-2xl font-bold">Issue Details #{selectedReport.id}</h3>
-              <button onClick={() => setSelectedReport(null)} className="text-2xl hover:opacity-80">✕</button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Info label="Store" value={selectedReport.storeName} />
-                <Info label="Issue Type" value={selectedReport.issueType} />
-                <Info label="Priority" value={selectedReport.priority} />
-                <Info label="Status" value={selectedReport.status} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Description</p>
-                <p className="font-medium text-gray-900 mt-1">{selectedReport.description}</p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Admin Response</p>
-                <textarea
-                  value={responseText}
-                  onChange={(e) => setResponseText(e.target.value)}
-                  rows={4}
-                  placeholder="Write reply here..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition"
-              >
-                Close
-              </button>
-              <button
-                onClick={sendResponse}
-                className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition"
-              >
-                Send Response
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -278,11 +172,3 @@ function priorityBadge(priority) {
   return <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${map[priority]}`}>{priority}</span>;
 }
 
-function Info({ label, value }) {
-  return (
-    <div>
-      <p className="text-sm text-gray-600">{label}</p>
-      <p className="font-semibold text-gray-900">{value}</p>
-    </div>
-  );
-}

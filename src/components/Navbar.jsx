@@ -19,14 +19,8 @@ export default function Navbar({ user, onLogout }) {
                   {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <button
-                  onClick={() => navigate("/report-issue")}
-                  className="ml-2 text-sm text-orange-700 px-3 py-1 rounded bg-orange-50 hover:bg-orange-100"
-                >
-                  Report Issue
-                </button>
-                <button
                   onClick={onLogout}
-                  className="ml-2 text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-100"
+                  className="ml-2 text-sm text-white px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 font-semibold shadow-sm"
                 >
                   Logout
                 </button>

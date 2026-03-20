@@ -51,6 +51,12 @@ export default function Sidebar() {
           </li>
 
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
+            <Link to="/report-issue" className="flex items-center gap-3 text-sm font-semibold">
+              <span className="text-xl">🚨</span> Report Issue
+            </Link>
+          </li>
+
+          <li className="px-3 py-2 rounded-md hover:bg-white/5">
             <Link to="/help" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">❓</span> Help
             </Link>
