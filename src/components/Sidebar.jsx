@@ -43,6 +43,13 @@ export default function Sidebar() {
               <span className="text-xl">💳</span> Billing
             </Link>
           </li>
+
+          <li className="px-3 py-2 rounded-md hover:bg-white/5">
+            <Link to="/store-profile" className="flex items-center gap-3 text-sm font-semibold">
+              <span className="text-xl">🏪</span> Store Profile
+            </Link>
+          </li>
+
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
             <Link to="/help" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">❓</span> Help
@@ -60,6 +67,8 @@ export default function Sidebar() {
           </li>
         </ul>
       </nav>
+
+
     </aside>
   );
 }
