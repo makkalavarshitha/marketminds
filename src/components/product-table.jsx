@@ -287,13 +287,6 @@ function ProductTable({ onDelete, onEdit, onQuickSave, filterCategory, setFilter
     setBulkStockQty("");
   };
 
-  const openBarcodeSearch = () => {
-    const code = window.prompt("Scan or enter barcode");
-    if (!code) return;
-    setScanValue(code);
-    setSearchTerm(code);
-  };
-
   const allSelectedOnPage =
     paginatedProducts.length > 0 && paginatedProducts.every((p) => selectedIds.includes(p.id));
 
@@ -310,12 +303,6 @@ function ProductTable({ onDelete, onEdit, onQuickSave, filterCategory, setFilter
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
           >
             ➕ Add Product
-          </button>
-          <button
-            onClick={openBarcodeSearch}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold"
-          >
-            📷 Scan Barcode
           </button>
         </div>
       </div>

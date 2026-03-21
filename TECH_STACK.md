@@ -171,7 +171,6 @@ marketmind/
 ### **Authentication System**
 - **Tech**: React State Management (useState)
 - **Features**: 
-  - Dual-portal login (Admin & Owner)
   - Email validation
   - Password visibility toggle
   - Loading states
@@ -240,7 +239,6 @@ marketmind/
 ## Design System
 
 ### Color Palette
-- **Admin Portal**: Indigo (600), Blue (500), Purple (600)
 - **Owner Portal**: Purple (600), Pink (500), Rose (600)
 - **Neutrals**: Gray scale (50-900)
 - **Feedback Colors**: 

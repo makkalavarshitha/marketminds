@@ -7,7 +7,6 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({ email: false, password: false });
-  const [selectedPortal, setSelectedPortal] = useState("admin"); // 'admin' or 'owner'
 
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -50,12 +49,11 @@ export default function Login({ onLogin }) {
     const user = {
       email,
       name: email.split("@")[0],
-      role: selectedPortal === "admin" ? "Admin" : "Owner",
-      portal: selectedPortal,
+      role: "Owner",
+      portal: "owner",
     };
 
     // Auto-register owner users to users list
-    if (selectedPortal === "owner") {
       const username = email.split("@")[0];
       const ownerName = toTitleCase(username);
       const storeName = `${ownerName}'s Store`;
@@ -96,7 +94,6 @@ export default function Login({ onLogin }) {
         existingStores.push(newStore);
         localStorage.setItem("marketmind-stores", JSON.stringify(existingStores));
       }
-    }
 
     localStorage.setItem("marketmind-user", JSON.stringify(user));
     onLogin(user);
@@ -104,13 +101,8 @@ export default function Login({ onLogin }) {
   };
 
   const handleDemoLogin = () => {
-    if (selectedPortal === "admin") {
-      setEmail("admin@marketmind.test");
-      setPassword("admin123");
-    } else {
-      setEmail("owner@marketmind.test");
-      setPassword("owner123");
-    }
+    setEmail("owner@marketmind.test");
+    setPassword("owner123");
   };
 
   return (
@@ -133,55 +125,6 @@ export default function Login({ onLogin }) {
           <p className="text-sm text-gray-600 mt-2">
             Sign in to manage your inventory
           </p>
-        </div>
-
-        {/* Portal Selection */}
-        <div className="mb-6">
-          <label className="text-sm font-semibold text-gray-700 mb-3 block flex items-center gap-2">
-            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
-            </svg>
-            Select Portal
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setSelectedPortal("admin")}
-              disabled={loading}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                selectedPortal === "admin"
-                  ? "border-indigo-500 bg-indigo-50 shadow-lg scale-105"
-                  : "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              <svg className={`w-8 h-8 ${selectedPortal === "admin" ? "text-indigo-600" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-              </svg>
-              <div className={`text-sm font-semibold ${selectedPortal === "admin" ? "text-indigo-700" : "text-gray-700"}`}>
-                Admin Portal
-              </div>
-              <div className="text-xs text-gray-500">Full Access</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedPortal("owner")}
-              disabled={loading}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                selectedPortal === "owner"
-                  ? "border-purple-500 bg-purple-50 shadow-lg scale-105"
-                  : "border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/50"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              <svg className={`w-8 h-8 ${selectedPortal === "owner" ? "text-purple-600" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
-              <div className={`text-sm font-semibold ${selectedPortal === "owner" ? "text-purple-700" : "text-gray-700"}`}>
-                Owner Portal
-              </div>
-              <div className="text-xs text-gray-500">Business Owner</div>
-            </button>
-          </div>
         </div>
 
         {/* Form */}
@@ -269,11 +212,7 @@ export default function Login({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full ${
-              selectedPortal === "admin"
-                ? "bg-gradient-to-r from-indigo-600 via-blue-500 to-purple-600"
-                : "bg-gradient-to-r from-purple-600 via-pink-500 to-rose-600"
-            } text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2`}
+            className="w-full bg-gradient-to-r from-purple-600 via-pink-500 to-rose-600 text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -281,14 +220,14 @@ export default function Login({ onLogin }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Signing in to {selectedPortal === "admin" ? "Admin" : "Owner"} Portal...
+                Signing in to Owner Portal...
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
                 </svg>
-                Sign In to {selectedPortal === "admin" ? "Admin" : "Owner"} Portal
+                Sign In to Owner Portal
               </>
             )}
           </button>
@@ -306,27 +245,25 @@ export default function Login({ onLogin }) {
             type="button"
             onClick={handleDemoLogin}
             disabled={loading}
-            className={`w-full bg-white border-2 ${
-              selectedPortal === "admin" ? "border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300" : "border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
-            } py-3 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+            className="w-full bg-white border-2 border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 py-3 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
-            Use Demo {selectedPortal === "admin" ? "Admin" : "Owner"} Account
+            Use Demo Owner Account
           </button>
 
           <div className="text-center text-xs text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
             <span className="font-medium text-gray-700">
-              {selectedPortal === "admin" ? "Admin" : "Owner"} Demo Credentials:
+              Owner Demo Credentials:
             </span>
             <br />
-            Email: <span className={`font-mono ${selectedPortal === "admin" ? "text-indigo-600" : "text-purple-600"}`}>
-              {selectedPortal === "admin" ? "admin@marketmind.test" : "owner@marketmind.test"}
+            Email: <span className="font-mono text-purple-600">
+              owner@marketmind.test
             </span>
             <br />
-            Password: <span className={`font-mono ${selectedPortal === "admin" ? "text-indigo-600" : "text-purple-600"}`}>
-              {selectedPortal === "admin" ? "admin123" : "owner123"}
+            Password: <span className="font-mono text-purple-600">
+              owner123
             </span>
           </div>
         </form>

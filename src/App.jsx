@@ -16,16 +16,6 @@ import AboutUs from "./components/AboutUs";
 import Contact from "./components/Contact";
 import { ensureDemoDataSeeded } from "./utils/seedDemoData";
 
-// Admin Portal Components
-import AdminSidebar from "./components/AdminSidebar";
-import AdminNavbar from "./components/AdminNavbar";
-import AdminDashboardNew from "./components/AdminDashboardNew";
-import AdminStoreManagement from "./components/AdminStoreManagement";
-import AdminGlobalProducts from "./components/AdminGlobalProducts";
-import AdminPlatformAnalytics from "./components/AdminPlatformAnalytics";
-import AdminUserManagement from "./components/AdminUserManagement";
-import AdminReports from "./components/AdminReports";
-
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,10 +42,7 @@ function App() {
     }
   })();
 
-  const ownerNeedsSetup = user?.portal !== "admin" && !storeProfile;
-
-  // Check if current route is admin portal
-  const isAdminPortal = location.pathname.startsWith("/admin");
+  const ownerNeedsSetup = !storeProfile;
 
   // Seed demo data and load products (simulated API-like startup)
   useEffect(() => {
@@ -128,10 +115,6 @@ function App() {
 
   const handleLogin = (u) => {
     setUser(u);
-    if (u?.portal === "admin") {
-      navigate("/admin/dashboard", { replace: true });
-      return;
-    }
 
     const hasStoreProfile = (() => {
       try {
@@ -184,24 +167,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 overflow-x-hidden">
-      {/* Conditional Sidebar - Admin or Owner */}
-      {isAdminPortal ? <AdminSidebar /> : <Sidebar />}
+      <Sidebar />
 
       <div className="min-h-screen md:pl-64 min-w-0">
-        {/* Show appropriate Navbar */}
-        {isAdminPortal ? (
-          <AdminNavbar onLogout={handleLogout} />
-        ) : (
-          <Navbar user={user} onLogout={handleLogout} />
-        )}
+        <Navbar user={user} onLogout={handleLogout} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-w-0">
-
           <Routes>
-            {/* Owner Portal Routes */}
             <Route
               path="/"
-              element={<Navigate to={user?.portal === "admin" ? "/admin/dashboard" : ownerNeedsSetup ? "/store-setup" : "/dashboard"} replace />}
+              element={<Navigate to={ownerNeedsSetup ? "/store-setup" : "/dashboard"} replace />}
             />
 
             <Route
@@ -226,12 +201,12 @@ function App() {
 
             <Route
               path="/store-setup"
-              element={user?.portal === "admin" ? <Navigate to="/admin/dashboard" replace /> : <StoreProfile isSetupMode />}
+              element={<StoreProfile isSetupMode />}
             />
 
             <Route
               path="/store-profile"
-              element={user?.portal === "admin" ? <Navigate to="/admin/dashboard" replace /> : ownerNeedsSetup ? <Navigate to="/store-setup" replace /> : <StoreProfile />}
+              element={ownerNeedsSetup ? <Navigate to="/store-setup" replace /> : <StoreProfile />}
             />
 
             <Route
@@ -263,19 +238,6 @@ function App() {
             <Route path="/help" element={<Help />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<Contact />} />
-
-            {/* Admin Portal Routes */}
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/dashboard" element={<AdminDashboardNew />} />
-            <Route path="/admin/stores" element={<AdminStoreManagement />} />
-            <Route path="/admin/products" element={<AdminGlobalProducts />} />
-            <Route path="/admin/analytics" element={<AdminPlatformAnalytics />} />
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/notifications" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/alerts" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/settings" element={<Navigate to="/admin/dashboard" replace />} />
-
           </Routes>
         </div>
       </div>
