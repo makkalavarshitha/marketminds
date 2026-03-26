@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react';
 
 export default function Navbar({ user, onLogout }) {
@@ -20,10 +21,19 @@ export default function Navbar({ user, onLogout }) {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+=======
+import { useNavigate } from "react-router-dom";
+
+export default function Navbar({ user, onLogout }) {
+  const navigate = useNavigate();
+
+ 
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-end items-center h-16 gap-4">
+<<<<<<< HEAD
           <div ref={notificationRef} className="relative">
             <button 
               type="button"
@@ -82,6 +92,8 @@ export default function Navbar({ user, onLogout }) {
             )}
           </div>
 
+=======
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
           <div className="flex items-center gap-3">
             {user ? (
               <>
@@ -93,6 +105,15 @@ export default function Navbar({ user, onLogout }) {
                   {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <button
+<<<<<<< HEAD
+=======
+                  onClick={() => navigate("/report-issue")}
+                  className="ml-2 text-sm text-orange-700 px-3 py-1 rounded bg-orange-50 hover:bg-orange-100"
+                >
+                  Report Issue
+                </button>
+                <button
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
                   onClick={onLogout}
                   className="ml-2 text-sm text-gray-600 px-3 py-1 rounded hover:bg-gray-100"
                 >

@@ -1,5 +1,8 @@
 import { useState } from "react";
+<<<<<<< HEAD
 import { authAPI } from "../utils/api";
+=======
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -14,6 +17,18 @@ export default function Login({ onLogin }) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+<<<<<<< HEAD
+=======
+  const toTitleCase = (value) =>
+    value
+      .replace(/[._-]+/g, " ")
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -36,6 +51,7 @@ export default function Login({ onLogin }) {
 
     setLoading(true);
 
+<<<<<<< HEAD
     try {
       const data = await authAPI.login({ email, password });
 
@@ -60,6 +76,65 @@ export default function Login({ onLogin }) {
     } finally {
       setLoading(false);
     }
+=======
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const user = {
+      email,
+      name: email.split("@")[0],
+      role: selectedPortal === "admin" ? "Admin" : "Owner",
+      portal: selectedPortal,
+    };
+
+    // Auto-register owner users to users list
+    if (selectedPortal === "owner") {
+      const username = email.split("@")[0];
+      const ownerName = toTitleCase(username);
+      const storeName = `${ownerName}'s Store`;
+      const joinedDate = new Date().toISOString().split("T")[0];
+
+      const existingUsers = JSON.parse(localStorage.getItem("marketmind-users") || "[]");
+      const userExists = existingUsers.some(u => u.email === email);
+
+      if (!userExists) {
+        const newUser = {
+          id: Date.now(),
+          name: ownerName,
+          email: user.email,
+          role: "Owner",
+          store: storeName,
+          status: "Active",
+          joined: joinedDate,
+        };
+        existingUsers.push(newUser);
+        localStorage.setItem("marketmind-users", JSON.stringify(existingUsers));
+      }
+
+      const existingStores = JSON.parse(localStorage.getItem("marketmind-stores") || "[]");
+      const storeExists = existingStores.some((store) => store.email === email);
+
+      if (!storeExists) {
+        const newStore = {
+          id: Date.now() + 1,
+          name: storeName,
+          owner: ownerName,
+          email,
+          status: "Pending",
+          products: 0,
+          revenue: 0,
+          lastActive: joinedDate,
+          location: "Pending",
+        };
+        existingStores.push(newStore);
+        localStorage.setItem("marketmind-stores", JSON.stringify(existingStores));
+      }
+    }
+
+    localStorage.setItem("marketmind-user", JSON.stringify(user));
+    onLogin(user);
+    setLoading(false);
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   };
 
   const handleDemoLogin = () => {

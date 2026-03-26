@@ -9,7 +9,10 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
     mfgDate: "",
     expiry: "",
     sku: "",
+<<<<<<< HEAD
     supplier: "",
+=======
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   });
 
   const [errors, setErrors] = useState({});
@@ -50,7 +53,10 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
     if (!form.category) newErrors.category = "Category is required";
     if (!form.price || form.price <= 0) newErrors.price = "Valid price is required";
     if (!form.quantity || form.quantity < 0) newErrors.quantity = "Valid quantity is required";
+<<<<<<< HEAD
     if (!form.supplier.trim()) newErrors.supplier = "Supplier is required";
+=======
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
 
     if (form.mfgDate && form.expiry && form.mfgDate > form.expiry) {
       newErrors.expiry = "Expiry date must be after manufacturing date";
@@ -60,11 +66,16 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
     return Object.keys(newErrors).length === 0;
   };
 
+<<<<<<< HEAD
   const handleSubmit = async (e) => {
+=======
+  const handleSubmit = (e) => {
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
     e.preventDefault();
 
     if (!validateForm()) return;
 
+<<<<<<< HEAD
     try {
       await onAddProduct({
         ...form,
@@ -85,6 +96,22 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
       console.error('Error adding product:', error);
       setErrors({ submit: error.message });
     }
+=======
+    onAddProduct({
+      ...form,
+      id: editingProduct?.id || Date.now(),
+    });
+
+    setForm({
+      name: "",
+      category: "",
+      price: "",
+      quantity: "",
+      mfgDate: "",
+      expiry: "",
+      sku: "",
+    });
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   };
 
   return (
@@ -218,6 +245,7 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
           {errors.expiry && <p className="text-red-500 text-sm mt-1">{errors.expiry}</p>}
         </div>
 
+<<<<<<< HEAD
         {/* Supplier */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -245,6 +273,10 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
               <p className="text-red-600 text-sm font-medium">Error: {errors.submit}</p>
             </div>
           )}
+=======
+        {/* Buttons */}
+        <div className="md:col-span-2 flex gap-4 mt-4">
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
           <button
             type="submit"
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold shadow transition"

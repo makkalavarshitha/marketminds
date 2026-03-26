@@ -43,6 +43,16 @@ export default function Sidebar() {
               <span className="text-xl">💳</span> Billing
             </Link>
           </li>
+<<<<<<< HEAD
+=======
+
+          <li className="px-3 py-2 rounded-md hover:bg-white/5">
+            <Link to="/store-profile" className="flex items-center gap-3 text-sm font-semibold">
+              <span className="text-xl">🏪</span> Store Profile
+            </Link>
+          </li>
+
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
           <li className="px-3 py-2 rounded-md hover:bg-white/5">
             <Link to="/help" className="flex items-center gap-3 text-sm font-semibold">
               <span className="text-xl">❓</span> Help
@@ -60,6 +70,11 @@ export default function Sidebar() {
           </li>
         </ul>
       </nav>
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
     </aside>
   );
 }

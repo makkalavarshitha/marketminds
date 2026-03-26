@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+<<<<<<< HEAD
 export default function Dashboard({ products }) {
+=======
+export default function Dashboard({ products, storeName }) {
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
   const navigate = useNavigate();
   const [voiceStatus, setVoiceStatus] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -313,7 +317,11 @@ export default function Dashboard({ products }) {
 
     try {
       recognition.start();
+<<<<<<< HEAD
     } catch (error) {
+=======
+    } catch {
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
       setVoiceStatus("❌ Could not start voice");
       setIsListening(false);
       setTimeout(() => setVoiceStatus(""), 3000);
@@ -324,7 +332,11 @@ export default function Dashboard({ products }) {
     <div className="p-6 bg-gray-50 min-h-screen space-y-6">
       {/* AI Summary */}
       <div className="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-6 rounded-2xl shadow-lg">
+<<<<<<< HEAD
         <h1 className="text-2xl md:text-3xl font-bold">Good Morning Owner 👋</h1>
+=======
+        <h1 className="text-2xl md:text-3xl font-bold">Good Morning, {storeName || "Your Store"} 👋</h1>
+>>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
         <p className="mt-2 text-white/90">Your store snapshot for today:</p>
         <ul className="mt-3 space-y-1 text-sm md:text-base">
           <li>• {restockSuggestions.length} items need restocking</li>
