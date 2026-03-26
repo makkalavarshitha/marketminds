@@ -53,47 +53,46 @@ export default function Login({ onLogin }) {
       portal: "owner",
     };
 
-    // Auto-register owner users to users list
-      const username = email.split("@")[0];
-      const ownerName = toTitleCase(username);
-      const storeName = `${ownerName}'s Store`;
-      const joinedDate = new Date().toISOString().split("T")[0];
+    const username = email.split("@")[0];
+    const ownerName = toTitleCase(username);
+    const storeName = `${ownerName}'s Store`;
+    const joinedDate = new Date().toISOString().split("T")[0];
 
-      const existingUsers = JSON.parse(localStorage.getItem("marketmind-users") || "[]");
-      const userExists = existingUsers.some(u => u.email === email);
+    const existingUsers = JSON.parse(localStorage.getItem("marketmind-users") || "[]");
+    const userExists = existingUsers.some((u) => u.email === email);
 
-      if (!userExists) {
-        const newUser = {
-          id: Date.now(),
-          name: ownerName,
-          email: user.email,
-          role: "Owner",
-          store: storeName,
-          status: "Active",
-          joined: joinedDate,
-        };
-        existingUsers.push(newUser);
-        localStorage.setItem("marketmind-users", JSON.stringify(existingUsers));
-      }
+    if (!userExists) {
+      const newUser = {
+        id: Date.now(),
+        name: ownerName,
+        email: user.email,
+        role: "Owner",
+        store: storeName,
+        status: "Active",
+        joined: joinedDate,
+      };
+      existingUsers.push(newUser);
+      localStorage.setItem("marketmind-users", JSON.stringify(existingUsers));
+    }
 
-      const existingStores = JSON.parse(localStorage.getItem("marketmind-stores") || "[]");
-      const storeExists = existingStores.some((store) => store.email === email);
+    const existingStores = JSON.parse(localStorage.getItem("marketmind-stores") || "[]");
+    const storeExists = existingStores.some((store) => store.email === email);
 
-      if (!storeExists) {
-        const newStore = {
-          id: Date.now() + 1,
-          name: storeName,
-          owner: ownerName,
-          email,
-          status: "Pending",
-          products: 0,
-          revenue: 0,
-          lastActive: joinedDate,
-          location: "Pending",
-        };
-        existingStores.push(newStore);
-        localStorage.setItem("marketmind-stores", JSON.stringify(existingStores));
-      }
+    if (!storeExists) {
+      const newStore = {
+        id: Date.now() + 1,
+        name: storeName,
+        owner: ownerName,
+        email,
+        status: "Pending",
+        products: 0,
+        revenue: 0,
+        lastActive: joinedDate,
+        location: "Pending",
+      };
+      existingStores.push(newStore);
+      localStorage.setItem("marketmind-stores", JSON.stringify(existingStores));
+    }
 
     localStorage.setItem("marketmind-user", JSON.stringify(user));
     onLogin(user);

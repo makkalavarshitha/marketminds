@@ -73,8 +73,6 @@ export default function Sidebar() {
           </li>
         </ul>
       </nav>
-
-
     </aside>
   );
 }

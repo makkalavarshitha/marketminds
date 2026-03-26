@@ -9,6 +9,7 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
     mfgDate: "",
     expiry: "",
     sku: "",
+    supplier: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -49,6 +50,7 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
     if (!form.category) newErrors.category = "Category is required";
     if (!form.price || form.price <= 0) newErrors.price = "Valid price is required";
     if (!form.quantity || form.quantity < 0) newErrors.quantity = "Valid quantity is required";
+    if (!form.supplier.trim()) newErrors.supplier = "Supplier is required";
 
     if (form.mfgDate && form.expiry && form.mfgDate > form.expiry) {
       newErrors.expiry = "Expiry date must be after manufacturing date";
@@ -76,6 +78,7 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
       mfgDate: "",
       expiry: "",
       sku: "",
+      supplier: "",
     });
   };
 
@@ -210,8 +213,33 @@ function ProductForm({ onAddProduct, editingProduct, onCancel }) {
           {errors.expiry && <p className="text-red-500 text-sm mt-1">{errors.expiry}</p>}
         </div>
 
+        {/* Supplier */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Supplier *
+          </label>
+          <input
+            type="text"
+            name="supplier"
+            value={form.supplier}
+            onChange={handleChange}
+            placeholder="Supplier name"
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
+              errors.supplier
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+            }`}
+          />
+          {errors.supplier && <p className="text-red-500 text-sm mt-1">{errors.supplier}</p>}
+        </div>
+
         {/* Buttons */}
         <div className="md:col-span-2 flex gap-4 mt-4">
+          {errors.submit && (
+            <div className="w-full p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+              <p className="text-red-600 text-sm font-medium">Error: {errors.submit}</p>
+            </div>
+          )}
           <button
             type="submit"
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold shadow transition"
