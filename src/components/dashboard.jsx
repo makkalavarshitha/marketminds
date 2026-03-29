@@ -313,7 +313,8 @@ export default function Dashboard({ products, storeName }) {
 
     try {
       recognition.start();
-    } catch {
+    } catch (error) {
+      console.error("Voice start error:", error);
       setVoiceStatus("❌ Could not start voice");
       setIsListening(false);
       setTimeout(() => setVoiceStatus(""), 3000);

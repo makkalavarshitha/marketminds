@@ -25,6 +25,7 @@ function App() {
   const [filterCategory, setFilterCategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingData, setLoadingData] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("marketmind-user");
@@ -167,10 +168,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 overflow-x-hidden">
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="min-h-screen md:pl-64 min-w-0">
-        <Navbar user={user} onLogout={handleLogout} />
+      <div className="min-h-screen md:pl-64 min-w-0 pt-16">
+        <Navbar user={user} onLogout={handleLogout} onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-w-0">
           <Routes>
