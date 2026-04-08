@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { authAPI } from "../utils/api";
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -12,20 +14,12 @@ export default function Login({ onLogin }) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  const toTitleCase = (value) =>
-    value
-      .replace(/[._-]+/g, " ")
-      .trim()
-      .split(" ")
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setTouched({ email: true, password: true });
 
+    // Validation
     if (!email || !password) {
       setError("Please enter both email and password.");
       return;
@@ -43,65 +37,34 @@ export default function Login({ onLogin }) {
 
     setLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const response = await authAPI.login({ email, password });
+      
+      if (response && response._id) {
+        const user = {
+          id: response._id,
+          email: response.email,
+          name: response.name,
+          role: response.role || "user",
+        };
 
-    const user = {
-      email,
-      name: email.split("@")[0],
-      role: "Owner",
-      portal: "owner",
-    };
-
-    const username = email.split("@")[0];
-    const ownerName = toTitleCase(username);
-    const storeName = `${ownerName}'s Store`;
-    const joinedDate = new Date().toISOString().split("T")[0];
-
-    const existingUsers = JSON.parse(localStorage.getItem("marketmind-users") || "[]");
-    const userExists = existingUsers.some((u) => u.email === email);
-
-    if (!userExists) {
-      const newUser = {
-        id: Date.now(),
-        name: ownerName,
-        email: user.email,
-        role: "Owner",
-        store: storeName,
-        status: "Active",
-        joined: joinedDate,
-      };
-      existingUsers.push(newUser);
-      localStorage.setItem("marketmind-users", JSON.stringify(existingUsers));
+        localStorage.setItem("marketmind-user", JSON.stringify(user));
+        localStorage.setItem("marketmind-token", response.token);
+        onLogin(user);
+      } else {
+        setError("Login failed. Invalid response.");
+      }
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const existingStores = JSON.parse(localStorage.getItem("marketmind-stores") || "[]");
-    const storeExists = existingStores.some((store) => store.email === email);
-
-    if (!storeExists) {
-      const newStore = {
-        id: Date.now() + 1,
-        name: storeName,
-        owner: ownerName,
-        email,
-        status: "Pending",
-        products: 0,
-        revenue: 0,
-        lastActive: joinedDate,
-        location: "Pending",
-      };
-      existingStores.push(newStore);
-      localStorage.setItem("marketmind-stores", JSON.stringify(existingStores));
-    }
-
-    localStorage.setItem("marketmind-user", JSON.stringify(user));
-    onLogin(user);
-    setLoading(false);
   };
 
   const handleDemoLogin = () => {
-    setEmail("owner@marketmind.test");
-    setPassword("owner123");
+    setEmail("demo@marketmind.com");
+    setPassword("demo123456");
   };
 
   return (
@@ -266,6 +229,14 @@ export default function Login({ onLogin }) {
             </span>
           </div>
         </form>
+
+        {/* Sign Up Link */}
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-indigo-600 hover:text-indigo-700 font-semibold hover:underline">
+            Sign up here
+          </Link>
+        </p>
       </div>
     </div>
   );

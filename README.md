@@ -1,26 +1,123 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# marketminds
-=======
-=======
->>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
-# React + Vite
+# MarketMinds - Supermarket Inventory Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive full-stack inventory management system designed for supermarket owners. Built with React + Vite (frontend) and Node.js + Express (backend).
 
-Currently, two official plugins are available:
+## 🚀 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Frontend:**
 
-## React Compiler
+- React 18 with Vite
+- React Router for navigation
+- Tailwind CSS for styling
+- Fetch API for backend communication
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Backend:**
 
-## Expanding the ESLint configuration
+- Node.js with Express.js
+- MongoDB with Mongoose
+- JWT authentication
+- Bcrypt for password hashing
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-<<<<<<< HEAD
->>>>>>> dfcc955 (first trial)
-=======
->>>>>>> e2ccfdd70eb32b5946ab96414bbab3dbf114fac0
+## 📋 Features
+
+- **Dashboard**: Real-time inventory overview with key metrics
+- **Product Management**: Add, edit, delete products with categories
+- **Inventory Tracking**: Monitor stock levels and expiry dates
+- **Sales Module**: Process transactions and manage billing
+- **Store Profile**: Manage store information and settings
+- **User Authentication**: Secure login and registration
+- **Search & Filter**: Find products by name and category
+- **Status Tracking**: Color-coded alerts for low stock and expiring items
+
+## 🏗 Getting Started
+
+### Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB Atlas account
+- npm or yarn
+
+### Installation
+
+**Backend Setup:**
+
+```bash
+cd backend
+npm install
+# Add your MongoDB URI and JWT secret to .env
+npm start
+```
+
+**Frontend Setup:**
+
+```bash
+npm install
+npm run dev
+```
+
+### Environment Variables
+
+**Backend (.env):**
+
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+```
+
+## 📁 Project Structure
+
+```
+marketminds/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   └── utils/
+│   ├── server.js
+│   └── package.json
+├── src/
+│   ├── components/
+│   ├── utils/
+│   ├── App.jsx
+│   └── main.jsx
+└── package.json
+```
+
+## 🔗 API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user (Protected)
+
+### Products
+
+- `GET /api/products` - Get all products
+- `POST /api/products` - Create product
+- `GET /api/products/:id` - Get single product
+- `PUT /api/products/:id` - Update product
+- `DELETE /api/products/:id` - Delete product
+
+### Sales
+
+- `GET /api/sales` - Get all sales
+- `POST /api/sales` - Create sale
+- `GET /api/sales/dashboard/stats` - Get dashboard stats
+
+### Store
+
+- `GET /api/store/profile` - Get store profile
+- `PUT /api/store/profile` - Update store profile
+
+## 🤝 Contributing
+
+Feel free to fork this project and submit pull requests.
+
+## 📝 License
+
+ISC

@@ -7,6 +7,7 @@ import Sales from "./components/Sales";
 import Billing from "./components/Billing";
 import Sidebar from "./components/Sidebar";
 import Login from "./components/Login";
+import SignUp from "./components/SignUp";
 import "./App.css";
 import Dashboard from "./components/dashboard";
 import StoreProfile from "./components/StoreProfile";
@@ -14,7 +15,7 @@ import OwnerReportIssue from "./components/OwnerReportIssue";
 import Help from "./components/Help";
 import AboutUs from "./components/AboutUs";
 import Contact from "./components/Contact";
-import { ensureDemoDataSeeded } from "./utils/seedDemoData";
+import { productsAPI, authAPI, storeAPI } from "./utils/api";
 
 function App() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingData, setLoadingData] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [storeProfile, setStoreProfile] = useState(null);
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("marketmind-user");
@@ -35,65 +37,71 @@ function App() {
     }
   });
 
-  const storeProfile = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("marketmind-store-profile")) || null;
-    } catch {
-      return null;
-    }
-  })();
-
   const ownerNeedsSetup = !storeProfile;
 
-  // Seed demo data and load products (simulated API-like startup)
+  // Load products from API on mount
   useEffect(() => {
+    if (!user) return;
+
     let mounted = true;
 
-    const bootstrapData = async () => {
+    const loadData = async () => {
       try {
-        await ensureDemoDataSeeded();
-        const saved = localStorage.getItem("marketmind-products");
-        if (saved && mounted) {
-          setProducts(JSON.parse(saved));
+        const [products, store] = await Promise.all([
+          productsAPI.getProducts().catch(() => []),
+          storeAPI.getProfile().catch(() => null),
+        ]);
+
+        if (mounted) {
+          setProducts(products.data || []);
+          setStoreProfile(store?.data || null);
         }
       } catch (error) {
-        console.error("Error loading products:", error);
+        console.error("Error loading data:", error);
       } finally {
         if (mounted) setLoadingData(false);
       }
     };
 
-    bootstrapData();
+    loadData();
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user]);
 
-  // Save products
-  useEffect(() => {
-    localStorage.setItem("marketmind-products", JSON.stringify(products));
-  }, [products]);
-
-  // Add / Update
-  const handleAddProduct = (product) => {
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? product : p))
-      );
-      setEditingProduct(null);
-    } else {
-      setProducts((prev) => [...prev, { ...product, id: Date.now() }]);
+  // Add / Update Product
+  const handleAddProduct = async (product) => {
+    try {
+      if (editingProduct) {
+        await productsAPI.updateProduct(product.id, product);
+        setProducts((prev) =>
+          prev.map((p) => (p.id === product.id ? product : p))
+        );
+        setEditingProduct(null);
+      } else {
+        const response = await productsAPI.createProduct(product);
+        setProducts((prev) => [...prev, response.data]);
+      }
+      navigate("/");
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert(error.message || "Failed to save product");
     }
-    navigate("/");
   };
 
-  // Delete
-  const handleDeleteProduct = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  // Delete Product
+  const handleDeleteProduct = async (id) => {
+    try {
+      await productsAPI.deleteProduct(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert(error.message || "Failed to delete product");
+    }
   };
 
-  // Edit
+  // Edit Product
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     navigate("/product-form");
@@ -104,38 +112,16 @@ function App() {
     navigate("/");
   };
 
-  const handleQuickSaveProduct = (product) => {
-    setProducts((prev) => {
-      const exists = prev.some((p) => p.id === product.id);
-      if (exists) {
-        return prev.map((p) => (p.id === product.id ? product : p));
-      }
-      return [...prev, product];
-    });
-  };
-
   const handleLogin = (u) => {
     setUser(u);
-
-    const hasStoreProfile = (() => {
-      try {
-        return Boolean(JSON.parse(localStorage.getItem("marketmind-store-profile")));
-      } catch {
-        return false;
-      }
-    })();
-
-    if (!hasStoreProfile) {
-      navigate("/store-setup", { replace: true });
-      return;
-    }
-
     navigate("/dashboard", { replace: true });
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("marketmind-user");
+    localStorage.removeItem("marketmind-token");
+    navigate("/login", { replace: true });
   };
 
   const filteredProducts = products
@@ -151,18 +137,24 @@ function App() {
         new Date(b.expiry || "9999-12-31")
     );
 
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  if (loadingData) {
+  if (loadingData && user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50">
         <div className="bg-white px-6 py-5 rounded-xl shadow border border-gray-100 text-center">
-          <p className="text-lg font-semibold text-gray-800">Loading demo data...</p>
-          <p className="text-sm text-gray-500 mt-1">Preparing inventory, billing and analytics</p>
+          <p className="text-lg font-semibold text-gray-800">Loading...</p>
+          <p className="text-sm text-gray-500 mt-1">Fetching your inventory and store data</p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 
@@ -187,7 +179,6 @@ function App() {
                   products={filteredProducts}
                   onDelete={handleDeleteProduct}
                   onEdit={handleEditProduct}
-                  onQuickSave={handleQuickSaveProduct}
                   filterCategory={filterCategory}
                   setFilterCategory={setFilterCategory}
                   allProducts={products}
@@ -202,12 +193,12 @@ function App() {
 
             <Route
               path="/store-setup"
-              element={<StoreProfile isSetupMode />}
+              element={<StoreProfile isSetupMode onSave={setStoreProfile} />}
             />
 
             <Route
               path="/store-profile"
-              element={ownerNeedsSetup ? <Navigate to="/store-setup" replace /> : <StoreProfile />}
+              element={ownerNeedsSetup ? <Navigate to="/store-setup" replace /> : <StoreProfile onSave={setStoreProfile} />}
             />
 
             <Route

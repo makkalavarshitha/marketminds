@@ -1,27 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
+import { salesAPI } from '../utils/api';
 
 export default function Billing() {
-  const [bills, setBills] = useState(() => {
-    try {
-      const savedBills = localStorage.getItem('marketmind-bills');
-      if (savedBills) {
-        return JSON.parse(savedBills);
-      }
-    } catch (e) {
-      console.error('Error loading bills:', e);
-    }
-    return [];
-  });
+  const [bills, setBills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch sales from API on mount
   useEffect(() => {
-    try {
-      const savedBills = localStorage.getItem('marketmind-bills');
-      if (savedBills) {
-        setBills(JSON.parse(savedBills));
+    const fetchSales = async () => {
+      try {
+        setLoading(true);
+        const response = await salesAPI.getSales();
+        // Convert sales data to bill format
+        const billsData = (response.data || []).map((sale) => ({
+          id: sale._id,
+          date: new Date(sale.createdAt).toISOString().split('T')[0],
+          customerName: sale.customerName || 'Walk-in',
+          phoneNumber: sale.phoneNumber,
+          items: sale.items || [],
+          subtotal: sale.subtotal || 0,
+          discountType: sale.discountType || 'none',
+          discountValue: sale.discountValue || 0,
+          discountAmount: sale.discountAmount || 0,
+          tax: sale.tax || 0,
+          total: sale.total || 0,
+          paymentMethod: sale.paymentMethod || 'cash',
+          status: sale.status || 'Paid',
+        }));
+        setBills(billsData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching sales:', err);
+        setError(err.message || 'Failed to load sales data');
+        setBills([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('Error loading bills:', e);
-    }
+    };
+
+    fetchSales();
   }, []);
 
   const today = new Date().toISOString().split('T')[0];
@@ -388,6 +406,32 @@ Status: ${bill.status}
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen p-6">
+      {/* Loading State */}
+      {loading && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="bg-white px-6 py-5 rounded-xl shadow border border-gray-100 text-center">
+            <p className="text-lg font-semibold text-gray-800">Loading Billing Data...</p>
+            <p className="text-sm text-gray-500 mt-1">Fetching your sales transactions</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <p className="text-red-800 text-sm"><strong>Error:</strong> {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && (
+      <>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">💳 Invoice Management</h1>
@@ -879,6 +923,8 @@ Status: ${bill.status}
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

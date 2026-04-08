@@ -11,10 +11,6 @@ export default function Sales({ products }) {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountType, setDiscountType] = useState("none");
   const [discountValue, setDiscountValue] = useState("");
-  const [voiceStatus, setVoiceStatus] = useState("");
-  const [isListening, setIsListening] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState("");
-  const [voiceCommand, setVoiceCommand] = useState("");
   const today = new Date().toISOString().split("T")[0];
 
   // Search products
@@ -75,113 +71,6 @@ export default function Sales({ products }) {
     });
     setSearchTerm("");
   };
-
-  const normalizeVoiceText = (text) => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  };
-
-  const parseVoiceAddCommand = (command) => {
-    const numberWords = {
-      one: 1,
-      two: 2,
-      three: 3,
-      four: 4,
-      five: 5,
-      six: 6,
-      seven: 7,
-      eight: 8,
-      nine: 9,
-      ten: 10,
-    };
-
-    const stopWords = new Set([
-      "add",
-      "to",
-      "the",
-      "cart",
-      "court",
-      "into",
-      "in",
-      "my",
-      "please",
-      "get",
-      "me",
-      "a",
-      "an",
-    ]);
-
-    let qty = 1;
-    const tokens = normalizeVoiceText(command).split(" ").filter(Boolean);
-    const productTokens = [];
-
-    for (const token of tokens) {
-      const asNum = parseInt(token, 10);
-      if (!Number.isNaN(asNum) && asNum > 0) {
-        qty = asNum;
-        continue;
-      }
-      if (numberWords[token]) {
-        qty = numberWords[token];
-        continue;
-      }
-      if (!stopWords.has(token)) {
-        productTokens.push(token);
-      }
-    }
-
-    return { qty, productPhrase: productTokens.join(" ").trim(), productTokens };
-  };
-
-  useEffect(() => {
-    if (!voiceCommand) return;
-
-    if (!products || products.length === 0) {
-      console.log("[Voice Add] Inventory not loaded:", products);
-      setVoiceStatus("❌ Inventory is empty. Please refresh once.");
-      setVoiceCommand("");
-      return;
-    }
-
-    const { qty, productPhrase, productTokens } = parseVoiceAddCommand(voiceCommand);
-
-    if (!productPhrase) {
-      setVoiceStatus("❌ Say product name after 'add'");
-      setVoiceCommand("");
-      return;
-    }
-
-    const scoredMatches = products
-      .map((p) => {
-        const name = (p.name || "").toLowerCase();
-        const tokenHits = productTokens.filter((t) => name.includes(t)).length;
-        const phraseHit = name.includes(productPhrase) || productPhrase.includes(name) ? 2 : 0;
-        return { product: p, score: tokenHits + phraseHit };
-      })
-      .filter((m) => m.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    const matched = scoredMatches[0]?.product;
-    console.log("[Voice Add] Inventory:", products);
-    console.log("[Voice Add] Transcript:", voiceCommand, "Parsed:", { qty, productPhrase });
-    console.log("[Voice Add] Matched Product:", matched);
-
-    if (!matched) {
-      setVoiceStatus(`❌ "${productPhrase}" not found`);
-      setVoiceCommand("");
-      return;
-    }
-
-    for (let i = 0; i < qty; i++) {
-      addToCart(matched);
-    }
-    setVoiceStatus(`✅ Added ${qty}x ${matched.name}`);
-    setVoiceCommand("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceCommand, products]);
 
   const removeFromCart = (productId) => {
     setCart(cart.filter((item) => item.id !== productId));

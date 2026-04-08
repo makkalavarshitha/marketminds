@@ -47,4 +47,9 @@ const productSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Indexes for performance optimization
+productSchema.index({ user: 1, category: 1 }); // Filter by user and category
+productSchema.index({ user: 1, expiry: 1 }); // Find expiring products
+productSchema.index({ user: 1, sku: 1 }); // Quick SKU lookups
+
 module.exports = mongoose.model('Product', productSchema);
