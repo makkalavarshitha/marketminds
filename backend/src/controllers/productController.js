@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Notification = require('../models/Notification');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 
@@ -6,11 +7,21 @@ const asyncHandler = require('../middleware/async');
 // @route   GET /api/products
 // @access  Private
 exports.getProducts = asyncHandler(async (req, res, next) => {
-  const products = await Product.find({ user: req.user.id });
+  const { limit = 50, skip = 0 } = req.query;
+
+  const products = await Product.find({ user: req.user.id })
+    .limit(parseInt(limit))
+    .skip(parseInt(skip))
+    .sort({ createdAt: -1 });
+
+  const total = await Product.countDocuments({ user: req.user.id });
 
   res.status(200).json({
     success: true,
     count: products.length,
+    total,
+    limit: parseInt(limit),
+    skip: parseInt(skip),
     data: products,
   });
 });
@@ -44,6 +55,16 @@ exports.createProduct = asyncHandler(async (req, res, next) => {
   req.body.user = req.user.id;
 
   const product = await Product.create(req.body);
+
+  // Create notification
+  await Notification.create({
+    user: req.user.id,
+    type: 'product_added',
+    title: 'Product Added',
+    message: `New product "${product.name}" added to inventory (${product.quantity} units)`,
+    relatedProductId: product._id,
+    actionUrl: '/product-table',
+  });
 
   res.status(201).json({
     success: true,

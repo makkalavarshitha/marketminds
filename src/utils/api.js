@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('marketmind-token');
@@ -52,3 +52,44 @@ export const productsAPI = {
     method: 'DELETE',
   }),
 };
+
+export const salesAPI = {
+  getSales: () => apiRequest('/sales'),
+  createSale: (saleData) => apiRequest('/sales', {
+    method: 'POST',
+    body: JSON.stringify(saleData),
+  }),
+  getDashboardStats: () => apiRequest('/sales/dashboard/stats'),
+};
+
+export const storeAPI = {
+  getProfile: () => apiRequest('/store'),
+  updateProfile: (data) => apiRequest('/store', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+};
+
+export const notificationsAPI = {
+  getNotifications: (limit = 50, skip = 0, read) => {
+    const params = new URLSearchParams();
+    params.append('limit', limit);
+    params.append('skip', skip);
+    if (read !== undefined) {
+      params.append('read', read);
+    }
+    return apiRequest(`/notifications?${params.toString()}`);
+  },
+  getNotification: (id) => apiRequest(`/notifications/${id}`),
+  markAsRead: (id) => apiRequest(`/notifications/${id}`, {
+    method: 'PUT',
+  }),
+  markAllAsRead: () => apiRequest('/notifications/mark-all/read', {
+    method: 'PUT',
+  }),
+  deleteNotification: (id) => apiRequest(`/notifications/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+export const getProduct = (id) => apiRequest(`/products/${id}`);
