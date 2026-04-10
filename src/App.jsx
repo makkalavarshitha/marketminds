@@ -8,6 +8,7 @@ import Billing from "./components/Billing";
 import Sidebar from "./components/Sidebar";
 import Login from "./components/Login";
 import SignUp from "./components/SignUp";
+import LandingPage from "./components/LandingPage";
 import "./App.css";
 import Dashboard from "./components/dashboard";
 import StoreProfile from "./components/StoreProfile";
@@ -151,6 +152,7 @@ function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
