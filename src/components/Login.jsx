@@ -76,6 +76,18 @@ export default function Login({ onLogin }) {
       </div>
 
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 relative z-10 border border-white/20">
+        {/* Back to Landing */}
+        <Link
+          to="/"
+          id="login-back-home"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-6 group"
+        >
+          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Home
+        </Link>
+
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 via-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-xl transform transition-all duration-300 hover:scale-110 hover:rotate-3">
